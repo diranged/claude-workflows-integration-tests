@@ -21,6 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install gh CLI
+        uses: dev-hanz-ops/install-gh-cli-action@v0.2.0
+
       - name: Generate App Token
         id: app-token
         uses: actions/create-github-app-token@v2
@@ -41,6 +44,9 @@ jobs:
       || contains(inputs.tests || 'all', 'all')
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install gh CLI
+        uses: dev-hanz-ops/install-gh-cli-action@v0.2.0
 
       - name: Generate App Token
         id: app-token
@@ -64,6 +70,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install gh CLI
+        uses: dev-hanz-ops/install-gh-cli-action@v0.2.0
+
       - name: Generate App Token
         id: app-token
         uses: actions/create-github-app-token@v2
@@ -84,6 +93,9 @@ jobs:
       || contains(inputs.tests || 'all', 'all')
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install gh CLI
+        uses: dev-hanz-ops/install-gh-cli-action@v0.2.0
 
       - name: Generate App Token
         id: app-token
