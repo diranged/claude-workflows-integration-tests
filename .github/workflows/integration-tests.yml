@@ -65,8 +65,10 @@ jobs:
     runs-on: diranged-claude-tests
     needs: [test-label-design]
     if: >-
-      contains(inputs.tests || 'all', 'auto-advance')
-      || contains(inputs.tests || 'all', 'all')
+      always()
+      && (needs.test-label-design.result == 'success' || needs.test-label-design.result == 'skipped')
+      && (contains(inputs.tests || 'all', 'auto-advance')
+        || contains(inputs.tests || 'all', 'all'))
     steps:
       - uses: actions/checkout@v4
 
