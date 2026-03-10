@@ -9,7 +9,8 @@ on:
 jobs:
   respond:
     if: >-
-      github.event.sender.type != 'Bot'
+      (github.event.sender.type != 'Bot'
+        || github.event.sender.login == 'claude-workflows-integration-test[bot]')
       && contains(github.event.comment.body, '@claude')
     permissions:
       contents: write
