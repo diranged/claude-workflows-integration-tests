@@ -14,7 +14,7 @@ on:
 
 jobs:
   test-mention-responder:
-    runs-on: diranged-claude-code
+    runs-on: diranged-claude-tests
     if: >-
       contains(inputs.tests || 'all', 'mention')
       || contains(inputs.tests || 'all', 'all')
@@ -35,7 +35,7 @@ jobs:
         run: bash scripts/test-mention-responder.sh
 
   test-label-design:
-    runs-on: diranged-claude-code
+    runs-on: diranged-claude-tests
     if: >-
       contains(inputs.tests || 'all', 'design')
       || contains(inputs.tests || 'all', 'all')
@@ -56,7 +56,7 @@ jobs:
         run: bash scripts/test-label-design.sh
 
   test-label-auto-advance:
-    runs-on: diranged-claude-code
+    runs-on: diranged-claude-tests
     needs: [test-label-design]
     if: >-
       contains(inputs.tests || 'all', 'auto-advance')
@@ -78,7 +78,7 @@ jobs:
         run: bash scripts/test-label-auto-advance.sh
 
   test-engineer-manager:
-    runs-on: diranged-claude-code
+    runs-on: diranged-claude-tests
     if: >-
       contains(inputs.tests || 'all', 'engineer')
       || contains(inputs.tests || 'all', 'all')

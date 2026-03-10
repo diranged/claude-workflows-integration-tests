@@ -14,7 +14,7 @@ on:
 
 jobs:
   run-engineer:
-    runs-on: diranged-claude-code
+    runs-on: diranged-claude-tests
     permissions:
       contents: write
       issues: write
