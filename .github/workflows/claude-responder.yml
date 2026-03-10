@@ -20,5 +20,6 @@ jobs:
     uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-responder.yml@main
     with:
       runner: diranged-claude-tests
+      allowed_bots: "claude[bot],claude-workflows-integration-test[bot]"
     secrets:
       claude_code_oauth_token: ${{ secrets.CLAUDE_OAUTH_TOKEN }}
