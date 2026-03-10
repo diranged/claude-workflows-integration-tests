@@ -60,6 +60,49 @@ wait_for_triggered_run() {
   return 1
 }
 
+# Wait for a new workflow run that isn't in the seen list
+# Usage: wait_for_new_run "workflow-name.yml" "seen_id1,seen_id2" [max_wait_seconds]
+# Returns: run ID
+wait_for_new_run() {
+  local workflow="$1"
+  local seen_runs="$2"
+  local max_wait="${3:-300}"
+
+  echo "Waiting for new workflow '$workflow' run (excluding: $seen_runs, max ${max_wait}s)..." >&2
+
+  local elapsed=0
+  while [ "$elapsed" -lt "$max_wait" ]; do
+    local run_id
+    run_id=$(gh run list \
+      --repo "$GITHUB_REPOSITORY" \
+      --workflow "$workflow" \
+      --limit 10 \
+      --json databaseId,status \
+      --jq "[.[] | select(.status != \"completed\")] | .[0].databaseId // empty" 2>/dev/null || true)
+
+    # If no in-progress run, check most recent completed that's not in seen list
+    if [ -z "$run_id" ]; then
+      run_id=$(gh run list \
+        --repo "$GITHUB_REPOSITORY" \
+        --workflow "$workflow" \
+        --limit 5 \
+        --json databaseId \
+        --jq ".[0].databaseId // empty" 2>/dev/null || true)
+    fi
+
+    if [ -n "$run_id" ] && ! echo ",$seen_runs," | grep -q ",$run_id,"; then
+      echo "$run_id"
+      return 0
+    fi
+
+    sleep 10
+    elapsed=$((elapsed + 10))
+  done
+
+  echo "ERROR: No new workflow run found for '$workflow' within ${max_wait}s" >&2
+  return 1
+}
+
 # Wait for a workflow run to complete
 # Usage: wait_for_completion <run_id> [max_wait_seconds]
 wait_for_completion() {

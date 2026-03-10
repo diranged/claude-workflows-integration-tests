@@ -4,6 +4,9 @@ source "$(dirname "$0")/lib.sh"
 
 echo "=== Test: Full Auto-Advance Pipeline ==="
 
+# Track seen run IDs to avoid matching the same run in multiple phases
+SEEN_RUNS=""
+
 # 1. Create test issue
 ISSUE=$(create_test_issue \
   "Auto-Advance Pipeline Test" \
@@ -20,22 +23,25 @@ gh issue edit "$ISSUE" \
 # 3. Wait for design phase
 echo "--- Phase 1: Design ---"
 RUN_ID=$(wait_for_triggered_run "claude-engineers.yml" 120)
+SEEN_RUNS="$RUN_ID"
 echo "Design run: $RUN_ID"
-wait_for_completion "$RUN_ID" 600
+wait_for_completion "$RUN_ID" 1200
 
 # 4. Wait for review phase (auto-triggered by designer adding claude:review)
 echo "--- Phase 2: Review ---"
-sleep 15
-RUN_ID=$(wait_for_triggered_run "claude-engineers.yml" 180)
+sleep 30
+RUN_ID=$(wait_for_new_run "claude-engineers.yml" "$SEEN_RUNS" 300)
+SEEN_RUNS="$SEEN_RUNS,$RUN_ID"
 echo "Review run: $RUN_ID"
-wait_for_completion "$RUN_ID" 600
+wait_for_completion "$RUN_ID" 1200
 
 # 5. Wait for implement phase (auto-triggered by architect adding claude:implement)
 echo "--- Phase 3: Implement ---"
-sleep 15
-RUN_ID=$(wait_for_triggered_run "claude-engineers.yml" 180)
+sleep 30
+RUN_ID=$(wait_for_new_run "claude-engineers.yml" "$SEEN_RUNS" 300)
+SEEN_RUNS="$SEEN_RUNS,$RUN_ID"
 echo "Implement run: $RUN_ID"
-wait_for_completion "$RUN_ID" 600
+wait_for_completion "$RUN_ID" 1200
 
 # 6. Verify PR was created
 echo "Checking for PR linked to issue #$ISSUE..."
