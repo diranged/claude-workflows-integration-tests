@@ -44,8 +44,8 @@ wait_for_triggered_run() {
     run_id=$(gh run list \
       --repo "$GITHUB_REPOSITORY" \
       --workflow "$workflow" \
-      --json databaseId,status,createdAt \
-      --jq "[.[] | select(.createdAt > \"$start_iso\")] | .[0].databaseId // empty" 2>/dev/null || true)
+      --json databaseId,status,conclusion,createdAt \
+      --jq "[.[] | select(.createdAt > \"$start_iso\") | select(.conclusion != \"skipped\" and .conclusion != \"cancelled\")] | .[0].databaseId // empty" 2>/dev/null || true)
 
     if [ -n "$run_id" ]; then
       echo "$run_id"
