@@ -13,11 +13,13 @@ create_test_issue() {
   local timestamp
   timestamp=$(date +%s)
 
-  gh issue create \
+  local url
+  url=$(gh issue create \
     --repo "$GITHUB_REPOSITORY" \
     --title "[Integration Test] $title - $run_id-$timestamp" \
-    --body "$body" \
-    --json number --jq '.number'
+    --body "$body")
+  # gh issue create returns the URL; extract issue number from it
+  echo "$url" | grep -oE '[0-9]+$'
 }
 
 # Wait for a workflow run triggered after a given timestamp
