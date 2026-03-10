@@ -72,27 +72,25 @@ wait_for_new_run() {
 
   local elapsed=0
   while [ "$elapsed" -lt "$max_wait" ]; do
+    # Look for in-progress or queued runs not in seen list
     local run_id
     run_id=$(gh run list \
       --repo "$GITHUB_REPOSITORY" \
       --workflow "$workflow" \
       --limit 10 \
-      --json databaseId,status \
-      --jq "[.[] | select(.status != \"completed\")] | .[0].databaseId // empty" 2>/dev/null || true)
-
-    # If no in-progress run, check most recent completed that's not in seen list
-    if [ -z "$run_id" ]; then
-      run_id=$(gh run list \
-        --repo "$GITHUB_REPOSITORY" \
-        --workflow "$workflow" \
-        --limit 5 \
-        --json databaseId \
-        --jq ".[0].databaseId // empty" 2>/dev/null || true)
-    fi
+      --json databaseId,status,conclusion \
+      --jq "[.[] | select(.status != \"completed\" or (.conclusion != \"skipped\" and .conclusion != \"cancelled\"))] | .[0].databaseId // empty" 2>/dev/null || true)
 
     if [ -n "$run_id" ] && ! echo ",$seen_runs," | grep -q ",$run_id,"; then
-      echo "$run_id"
-      return 0
+      # Verify it's not skipped
+      local conclusion
+      conclusion=$(gh run view "$run_id" --repo "$GITHUB_REPOSITORY" --json conclusion --jq '.conclusion' 2>/dev/null || true)
+      if [ "$conclusion" != "skipped" ] && [ "$conclusion" != "cancelled" ]; then
+        echo "$run_id"
+        return 0
+      fi
+      # Add skipped run to seen list so we don't check it again
+      seen_runs="$seen_runs,$run_id"
     fi
 
     sleep 10
