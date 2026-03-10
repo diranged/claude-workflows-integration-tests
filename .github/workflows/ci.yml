@@ -1,0 +1,20 @@
+name: "CI"
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Basic validation
+        run: |
+          echo "CI check passed"
+          # Minimal CI for integration testing of CI retry flow
+          if [ -f "FAIL_CI" ]; then
+            echo "FAIL_CI marker found, failing intentionally"
+            exit 1
+          fi

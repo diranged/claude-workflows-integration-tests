@@ -1,0 +1,34 @@
+name: "Engineer Managers"
+
+on:
+  workflow_dispatch:
+    inputs:
+      engineer:
+        description: "Which engineer to test"
+        required: true
+        type: choice
+        options:
+          - docs-engineer
+          - code-janitor
+          - security-engineer
+
+jobs:
+  run-engineer:
+    runs-on: diranged-claude-code
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: diranged/claude-code-agentic-workflows/claude-engineer@main
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_OAUTH_TOKEN }}
+          agent_name: ${{ inputs.engineer }}
+          dashboard_label: "integration-test:${{ inputs.engineer }}"
+          task_label: "integration-test:${{ inputs.engineer }}-task"
+          delegation_label: "integration-test:design"
+          max_implementations: "0"
+          timeout_minutes: "30"

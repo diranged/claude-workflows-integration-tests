@@ -1,0 +1,146 @@
+name: "Integration Tests"
+
+on:
+  repository_dispatch:
+    types: [run-integration-tests]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Ref of main repo to test against"
+        default: "main"
+      tests:
+        description: "Tests to run (comma-separated or 'all')"
+        default: "all"
+
+jobs:
+  test-mention-responder:
+    runs-on: diranged-claude-code
+    if: >-
+      contains(inputs.tests || 'all', 'mention')
+      || contains(inputs.tests || 'all', 'all')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate App Token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.INTEGRATION_APP_ID }}
+          private-key: ${{ secrets.INTEGRATION_APP_KEY }}
+
+      - name: Test @claude Mention Responder
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: bash scripts/test-mention-responder.sh
+
+  test-label-design:
+    runs-on: diranged-claude-code
+    if: >-
+      contains(inputs.tests || 'all', 'design')
+      || contains(inputs.tests || 'all', 'all')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate App Token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.INTEGRATION_APP_ID }}
+          private-key: ${{ secrets.INTEGRATION_APP_KEY }}
+
+      - name: Test Design Label Pipeline
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: bash scripts/test-label-design.sh
+
+  test-label-auto-advance:
+    runs-on: diranged-claude-code
+    needs: [test-label-design]
+    if: >-
+      contains(inputs.tests || 'all', 'auto-advance')
+      || contains(inputs.tests || 'all', 'all')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate App Token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.INTEGRATION_APP_ID }}
+          private-key: ${{ secrets.INTEGRATION_APP_KEY }}
+
+      - name: Test Full Auto-Advance Pipeline
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: bash scripts/test-label-auto-advance.sh
+
+  test-engineer-manager:
+    runs-on: diranged-claude-code
+    if: >-
+      contains(inputs.tests || 'all', 'engineer')
+      || contains(inputs.tests || 'all', 'all')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate App Token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.INTEGRATION_APP_ID }}
+          private-key: ${{ secrets.INTEGRATION_APP_KEY }}
+
+      - name: Test Engineer Manager
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: bash scripts/test-engineer-manager.sh
+
+  report:
+    runs-on: ubuntu-latest
+    needs:
+      - test-mention-responder
+      - test-label-design
+      - test-label-auto-advance
+      - test-engineer-manager
+    if: always()
+    steps:
+      - name: Collect results
+        id: results
+        run: |
+          echo "## Integration Test Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Test | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Mention Responder | ${{ needs.test-mention-responder.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Label Design | ${{ needs.test-label-design.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Auto-Advance | ${{ needs.test-label-auto-advance.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Engineer Manager | ${{ needs.test-engineer-manager.result }} |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report to main repo
+        if: github.event_name == 'repository_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_REPO: ${{ github.event.client_payload.source_repo }}
+          SOURCE_SHA: ${{ github.event.client_payload.source_sha }}
+        run: |
+          MENTION="${{ needs.test-mention-responder.result }}"
+          DESIGN="${{ needs.test-label-design.result }}"
+          AUTO="${{ needs.test-label-auto-advance.result }}"
+          ENGINEER="${{ needs.test-engineer-manager.result }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # Determine overall status
+          if [ "$MENTION" = "success" ] && [ "$DESIGN" = "success" ] && [ "$AUTO" = "success" ] && [ "$ENGINEER" = "success" ]; then
+            OVERALL="All tests passed"
+            ICON="white_check_mark"
+          else
+            OVERALL="Some tests failed"
+            ICON="x"
+          fi
+
+          echo "Integration tests completed: $OVERALL"
+          echo "Results: mention=$MENTION design=$DESIGN auto-advance=$AUTO engineer=$ENGINEER"
+          echo "Run URL: $RUN_URL"

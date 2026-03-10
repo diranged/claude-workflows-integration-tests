@@ -1,0 +1,23 @@
+name: "Claude Responder"
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  respond:
+    if: >-
+      github.event.sender.type != 'Bot'
+      && contains(github.event.comment.body, '@claude')
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-responder.yml@main
+    with:
+      runner: diranged-claude-code
+    secrets:
+      claude_code_oauth_token: ${{ secrets.CLAUDE_OAUTH_TOKEN }}

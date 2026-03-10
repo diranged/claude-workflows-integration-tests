@@ -1,0 +1,45 @@
+name: "Claude Engineers"
+
+on:
+  issues:
+    types: [labeled]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+jobs:
+  # Label-triggered: route claude:* labels to the appropriate agent
+  engineers:
+    if: >-
+      github.event_name == 'issues'
+      && github.event.action == 'labeled'
+      && !github.event.issue.pull_request
+      && startsWith(github.event.label.name, 'claude:')
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-engineers.yml@main
+    with:
+      runner: diranged-claude-code
+    secrets:
+      claude_code_oauth_token: ${{ secrets.CLAUDE_OAUTH_TOKEN }}
+
+  # CI retry: re-trigger developer when CI fails on a Claude-authored PR
+  ci-retry:
+    if: >-
+      github.event_name == 'workflow_run'
+      && github.event.workflow_run.conclusion == 'failure'
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-engineers.yml@main
+    with:
+      runner: diranged-claude-code
+      ci_retry: "true"
+      ci_retry_max: "3"
+    secrets:
+      claude_code_oauth_token: ${{ secrets.CLAUDE_OAUTH_TOKEN }}
