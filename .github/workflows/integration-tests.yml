@@ -88,6 +88,33 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: bash scripts/test-label-auto-advance.sh
 
+  test-formatting-enforcement:
+    runs-on: diranged-claude-tests
+    needs: [test-label-design]
+    if: >-
+      always()
+      && (needs.test-label-design.result == 'success' || needs.test-label-design.result == 'skipped')
+      && (contains(inputs.tests || 'all', 'formatting')
+        || contains(inputs.tests || 'all', 'all'))
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gh CLI
+        uses: dev-hanz-ops/install-gh-cli-action@v0.2.0
+
+      - name: Generate App Token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.INTEGRATION_APP_ID }}
+          private-key: ${{ secrets.INTEGRATION_APP_KEY }}
+
+      - name: Test Formatting Enforcement
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: bash scripts/test-formatting-enforcement.sh
+
   test-engineer-manager:
     runs-on: diranged-claude-tests
     if: >-
@@ -118,6 +145,7 @@ jobs:
       - test-mention-responder
       - test-label-design
       - test-label-auto-advance
+      - test-formatting-enforcement
       - test-engineer-manager
     if: always()
     steps:
@@ -131,6 +159,7 @@ jobs:
           echo "| Mention Responder | ${{ needs.test-mention-responder.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Label Design | ${{ needs.test-label-design.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Auto-Advance | ${{ needs.test-label-auto-advance.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Formatting Enforcement | ${{ needs.test-formatting-enforcement.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Engineer Manager | ${{ needs.test-engineer-manager.result }} |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Report to main repo
@@ -143,11 +172,12 @@ jobs:
           MENTION="${{ needs.test-mention-responder.result }}"
           DESIGN="${{ needs.test-label-design.result }}"
           AUTO="${{ needs.test-label-auto-advance.result }}"
+          FORMATTING="${{ needs.test-formatting-enforcement.result }}"
           ENGINEER="${{ needs.test-engineer-manager.result }}"
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           # Determine overall status
-          if [ "$MENTION" = "success" ] && [ "$DESIGN" = "success" ] && [ "$AUTO" = "success" ] && [ "$ENGINEER" = "success" ]; then
+          if [ "$MENTION" = "success" ] && [ "$DESIGN" = "success" ] && [ "$AUTO" = "success" ] && [ "$FORMATTING" = "success" ] && [ "$ENGINEER" = "success" ]; then
             OVERALL="All tests passed"
             ICON="white_check_mark"
           else
@@ -156,5 +186,5 @@ jobs:
           fi
 
           echo "Integration tests completed: $OVERALL"
-          echo "Results: mention=$MENTION design=$DESIGN auto-advance=$AUTO engineer=$ENGINEER"
+          echo "Results: mention=$MENTION design=$DESIGN auto-advance=$AUTO formatting=$FORMATTING engineer=$ENGINEER"
           echo "Run URL: $RUN_URL"
