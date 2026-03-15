@@ -19,7 +19,22 @@ create_test_issue() {
     --title "[Integration Test] $title - $run_id-$timestamp" \
     --body "$body")
   # gh issue create returns the URL; extract issue number from it
-  echo "$url" | grep -oE '[0-9]+$'
+  local issue_number
+  issue_number=$(echo "$url" | grep -oE '[0-9]+$')
+
+  # Wait for issue to be queryable (GitHub eventual consistency)
+  local retries=0
+  while [ "$retries" -lt 5 ]; do
+    if gh issue view "$issue_number" --repo "$GITHUB_REPOSITORY" --json number --jq '.number' >/dev/null 2>&1; then
+      echo "$issue_number"
+      return 0
+    fi
+    echo "Waiting for issue #$issue_number to become queryable (attempt $((retries + 1))/5)..." >&2
+    sleep 2
+    retries=$((retries + 1))
+  done
+
+  echo "$issue_number"
 }
 
 # Wait for a workflow run triggered after a given timestamp
