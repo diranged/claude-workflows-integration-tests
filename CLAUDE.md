@@ -9,7 +9,7 @@ This repo mirrors what real consumers do — thin caller workflows that consume 
 ## Structure
 
 - `.github/workflows/claude-responder.yml` — Caller: @claude mentions
-- `.github/workflows/claude-engineers.yml` — Caller: claude:* labels
+- `.github/workflows/claude-engineers.yml` — Caller: claude:\* labels
 - `.github/workflows/claude-engineer-managers.yml` — Caller: engineer workflow_dispatch
 - `.github/workflows/ci.yml` — Minimal CI (for CI retry testing)
 - `.github/workflows/integration-tests.yml` — Orchestrator: runs all test scenarios
@@ -20,6 +20,7 @@ This repo mirrors what real consumers do — thin caller workflows that consume 
 ## Running Tests
 
 Tests are triggered via:
+
 1. `repository_dispatch` from the main repo (post-merge to main)
 2. `workflow_dispatch` in this repo (manual ad-hoc runs)
 

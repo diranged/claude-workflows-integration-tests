@@ -1,10 +1,10 @@
-name: "Claude Engineers"
+name: 'Claude Engineers'
 
 on:
   issues:
     types: [labeled]
   workflow_run:
-    workflows: ["CI"]
+    workflows: ['CI']
     types: [completed]
 
 jobs:
@@ -25,8 +25,8 @@ jobs:
     uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-engineers.yml@main
     with:
       runner: diranged-claude-tests
-      allowed_bots: "claude[bot],claude-workflows-integration-test[bot]"
-      allowed_tools: "Bash(*),Read,Glob,Grep,Edit,Write,WebFetch,WebSearch"
+      allowed_bots: 'claude[bot],claude-workflows-integration-test[bot]'
+      allowed_tools: 'Bash(*),Read,Glob,Grep,Edit,Write,WebFetch,WebSearch'
     secrets:
       claude_code_oauth_token: ${{ secrets.CLAUDE_OAUTH_TOKEN }}
       app_id: ${{ secrets.INTEGRATION_APP_ID }}
@@ -45,7 +45,7 @@ jobs:
     uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-engineers.yml@main
     with:
       runner: diranged-claude-tests
-      ci_retry: "true"
-      ci_retry_max: "3"
+      ci_retry: 'true'
+      ci_retry_max: '3'
     secrets:
       claude_code_oauth_token: ${{ secrets.CLAUDE_OAUTH_TOKEN }}

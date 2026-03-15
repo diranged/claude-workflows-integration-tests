@@ -16,6 +16,7 @@ This repository acts as a real consumer of the shared workflows, exercising end-
 ### GitHub App
 
 A dedicated GitHub App ("Claude Workflows Integration Test") with:
+
 - Issues: Read & Write
 - Pull requests: Read & Write
 - Contents: Read & Write
@@ -25,15 +26,16 @@ Install on this repository only.
 
 ### Secrets
 
-| Secret | Description |
-|--------|-------------|
-| `CLAUDE_OAUTH_TOKEN` | Claude Code OAuth token for authentication |
-| `INTEGRATION_APP_ID` | GitHub App ID |
-| `INTEGRATION_APP_KEY` | GitHub App private key (PEM) |
+| Secret                | Description                                |
+| --------------------- | ------------------------------------------ |
+| `CLAUDE_OAUTH_TOKEN`  | Claude Code OAuth token for authentication |
+| `INTEGRATION_APP_ID`  | GitHub App ID                              |
+| `INTEGRATION_APP_KEY` | GitHub App private key (PEM)               |
 
 ### Main Repo Secret
 
 The main repo (`diranged/claude-code-agentic-workflows`) needs:
+
 - `INTEGRATION_TEST_PAT` — PAT with `repo` scope for `repository_dispatch`
 
 ## Running Tests
@@ -57,9 +59,9 @@ gh workflow run integration-tests.yml -f tests=design
 
 ## Test Scenarios
 
-| Test | Flow | Duration |
-|------|------|----------|
-| `mention` | @claude comment → response | ~2-3 min |
-| `design` | claude:design → designer agent | ~5 min |
-| `auto-advance` | design → review → implement pipeline | ~15-20 min |
-| `engineer` | Engineer manager → dashboard creation | ~10-15 min |
+| Test           | Flow                                  | Duration   |
+| -------------- | ------------------------------------- | ---------- |
+| `mention`      | @claude comment → response            | ~2-3 min   |
+| `design`       | claude:design → designer agent        | ~5 min     |
+| `auto-advance` | design → review → implement pipeline  | ~15-20 min |
+| `engineer`     | Engineer manager → dashboard creation | ~10-15 min |

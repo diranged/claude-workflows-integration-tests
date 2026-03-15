@@ -1,4 +1,4 @@
-name: "Integration Tests"
+name: 'Integration Tests'
 
 on:
   repository_dispatch:
@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Ref of main repo to test against"
-        default: "main"
+        description: 'Ref of main repo to test against'
+        default: 'main'
       tests:
         description: "Tests to run (comma-separated or 'all')"
-        default: "all"
+        default: 'all'
 
 jobs:
   test-mention-responder:
