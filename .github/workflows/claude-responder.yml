@@ -1,4 +1,4 @@
-name: "Claude Responder"
+name: 'Claude Responder'
 
 on:
   issue_comment:
@@ -20,7 +20,7 @@ jobs:
     uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-responder.yml@main
     with:
       runner: diranged-claude-tests
-      allowed_bots: "claude[bot],claude-workflows-integration-test[bot]"
-      allowed_tools: "Bash(*),Read,Glob,Grep,Edit,Write,WebFetch,WebSearch"
+      allowed_bots: 'claude[bot],claude-workflows-integration-test[bot]'
+      allowed_tools: 'Bash(*),Read,Glob,Grep,Edit,Write,WebFetch,WebSearch'
     secrets:
       claude_code_oauth_token: ${{ secrets.CLAUDE_OAUTH_TOKEN }}

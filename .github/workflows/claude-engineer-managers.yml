@@ -1,10 +1,10 @@
-name: "Engineer Managers"
+name: 'Engineer Managers'
 
 on:
   workflow_dispatch:
     inputs:
       engineer:
-        description: "Which engineer to test"
+        description: 'Which engineer to test'
         required: true
         type: choice
         options:
@@ -26,10 +26,10 @@ jobs:
       - uses: diranged/claude-code-agentic-workflows/claude-engineer@main
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_OAUTH_TOKEN }}
-          allowed_bots: "claude[bot],claude-workflows-integration-test[bot]"
+          allowed_bots: 'claude[bot],claude-workflows-integration-test[bot]'
           agent_name: ${{ inputs.engineer }}
-          dashboard_label: "integration-test:${{ inputs.engineer }}"
-          task_label: "integration-test:${{ inputs.engineer }}-task"
-          delegation_label: "integration-test:design"
-          max_implementations: "0"
-          timeout_minutes: "30"
+          dashboard_label: 'integration-test:${{ inputs.engineer }}'
+          task_label: 'integration-test:${{ inputs.engineer }}-task'
+          delegation_label: 'integration-test:design'
+          max_implementations: '0'
+          timeout_minutes: '30'
