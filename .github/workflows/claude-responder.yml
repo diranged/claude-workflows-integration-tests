@@ -17,7 +17,7 @@ jobs:
       issues: write
       pull-requests: write
       id-token: write
-    uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-responder.yml@main
+    uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-responder.yml@integ-testing
     with:
       runner: diranged-claude-tests
       allowed_bots: 'claude[bot],claude-workflows-integration-test[bot]'

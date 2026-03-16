@@ -22,7 +22,7 @@ jobs:
       issues: write
       pull-requests: write
       id-token: write
-    uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-engineers.yml@main
+    uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-engineers.yml@integ-testing
     with:
       runner: diranged-claude-tests
       allowed_bots: 'claude[bot],claude-workflows-integration-test[bot]'
@@ -42,7 +42,7 @@ jobs:
       issues: write
       pull-requests: write
       id-token: write
-    uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-engineers.yml@main
+    uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-engineers.yml@integ-testing
     with:
       runner: diranged-claude-tests
       ci_retry: 'true'
