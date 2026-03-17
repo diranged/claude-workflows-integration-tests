@@ -24,5 +24,6 @@ jobs:
           app_id: ${{ secrets.INTEGRATION_APP_ID }}
           app_private_key: ${{ secrets.INTEGRATION_APP_KEY }}
           label_trigger: 'claude'
+          compose_prompt: 'true'
           allowed_bots: 'claude[bot],claude-workflows-integration-test[bot]'
           allowed_tools: 'Bash(*),Read,Glob,Grep,Edit,Write,WebFetch,WebSearch'
