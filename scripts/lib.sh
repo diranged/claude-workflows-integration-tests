@@ -134,6 +134,84 @@ wait_for_completion() {
   }
 }
 
+# Wait for an issue to gain a specific label
+# Usage: wait_for_label "issue_number" "label_name" [max_wait_seconds]
+wait_for_label() {
+  local issue_number="$1"
+  local label="$2"
+  local max_wait="${3:-600}"
+
+  echo "Waiting for label '$label' on issue #$issue_number (max ${max_wait}s)..." >&2
+
+  local elapsed=0
+  while [ "$elapsed" -lt "$max_wait" ]; do
+    local labels
+    labels=$(gh issue view "$issue_number" --repo "$GITHUB_REPOSITORY" --json labels --jq '[.labels[].name] | join(",")' 2>/dev/null || true)
+    if echo ",$labels," | grep -q ",$label,"; then
+      echo "Label '$label' found on issue #$issue_number" >&2
+      return 0
+    fi
+    sleep 10
+    elapsed=$((elapsed + 10))
+  done
+
+  echo "ERROR: Label '$label' not found on issue #$issue_number within ${max_wait}s" >&2
+  return 1
+}
+
+# Wait for a label to be removed from an issue
+# Usage: wait_for_label_removed "issue_number" "label_name" [max_wait_seconds]
+wait_for_label_removed() {
+  local issue_number="$1"
+  local label="$2"
+  local max_wait="${3:-600}"
+
+  echo "Waiting for label '$label' to be removed from issue #$issue_number (max ${max_wait}s)..." >&2
+
+  local elapsed=0
+  while [ "$elapsed" -lt "$max_wait" ]; do
+    local labels
+    labels=$(gh issue view "$issue_number" --repo "$GITHUB_REPOSITORY" --json labels --jq '[.labels[].name] | join(",")' 2>/dev/null || true)
+    if ! echo ",$labels," | grep -q ",$label,"; then
+      echo "Label '$label' removed from issue #$issue_number" >&2
+      return 0
+    fi
+    sleep 10
+    elapsed=$((elapsed + 10))
+  done
+
+  echo "ERROR: Label '$label' still present on issue #$issue_number after ${max_wait}s" >&2
+  return 1
+}
+
+# Wait for a PR linked to a specific issue
+# Usage: wait_for_linked_pr "issue_number" [max_wait_seconds]
+# Returns: PR number
+wait_for_linked_pr() {
+  local issue_number="$1"
+  local max_wait="${2:-300}"
+
+  echo "Waiting for PR linked to issue #$issue_number (max ${max_wait}s)..." >&2
+
+  local elapsed=0
+  while [ "$elapsed" -lt "$max_wait" ]; do
+    local pr
+    pr=$(gh pr list \
+      --repo "$GITHUB_REPOSITORY" \
+      --json number,body \
+      --jq ".[] | select(.body | contains(\"#$issue_number\")) | .number" 2>/dev/null | head -1 || true)
+    if [ -n "$pr" ]; then
+      echo "$pr"
+      return 0
+    fi
+    sleep 10
+    elapsed=$((elapsed + 10))
+  done
+
+  echo "ERROR: No PR found linking to issue #$issue_number within ${max_wait}s" >&2
+  return 1
+}
+
 # Verify issue has a tracking comment from Claude
 # Usage: verify_tracking_comment <issue_number>
 verify_tracking_comment() {
