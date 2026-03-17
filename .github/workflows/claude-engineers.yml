@@ -3,49 +3,26 @@ name: 'Claude Engineers'
 on:
   issues:
     types: [labeled]
-  workflow_run:
-    workflows: ['CI']
-    types: [completed]
 
 jobs:
-  # Label-triggered: route claude:* labels to the appropriate agent
   engineers:
     if: >-
       github.event_name == 'issues'
       && github.event.action == 'labeled'
       && !github.event.issue.pull_request
       && startsWith(github.event.label.name, 'claude:')
-      && github.event.label.name != 'claude:auto_advance'
-      && github.event.label.name != 'claude:queued'
+    runs-on: diranged-claude-tests
     permissions:
       contents: write
       issues: write
       pull-requests: write
       id-token: write
-    uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-engineers.yml@integ-testing
-    with:
-      runner: diranged-claude-tests
-      allowed_bots: 'claude[bot],claude-workflows-integration-test[bot]'
-      allowed_tools: 'Bash(*),Read,Glob,Grep,Edit,Write,WebFetch,WebSearch'
-    secrets:
-      claude_code_oauth_token: ${{ secrets.CLAUDE_OAUTH_TOKEN }}
-      app_id: ${{ secrets.INTEGRATION_APP_ID }}
-      app_private_key: ${{ secrets.INTEGRATION_APP_KEY }}
-
-  # CI retry: re-trigger developer when CI fails on a Claude-authored PR
-  ci-retry:
-    if: >-
-      github.event_name == 'workflow_run'
-      && github.event.workflow_run.conclusion == 'failure'
-    permissions:
-      contents: write
-      issues: write
-      pull-requests: write
-      id-token: write
-    uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-engineers.yml@integ-testing
-    with:
-      runner: diranged-claude-tests
-      ci_retry: 'true'
-      ci_retry_max: '3'
-    secrets:
-      claude_code_oauth_token: ${{ secrets.CLAUDE_OAUTH_TOKEN }}
+    steps:
+      - uses: diranged/claude-code-agentic-workflows/claude-respond@integ-testing
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_OAUTH_TOKEN }}
+          app_id: ${{ secrets.INTEGRATION_APP_ID }}
+          app_private_key: ${{ secrets.INTEGRATION_APP_KEY }}
+          label_trigger: 'claude'
+          allowed_bots: 'claude[bot],claude-workflows-integration-test[bot]'
+          allowed_tools: 'Bash(*),Read,Glob,Grep,Edit,Write,WebFetch,WebSearch'

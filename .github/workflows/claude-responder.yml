@@ -12,15 +12,15 @@ jobs:
       (github.event.sender.type != 'Bot'
         || github.event.sender.login == 'claude-workflows-integration-test[bot]')
       && contains(github.event.comment.body, '@claude')
+    runs-on: diranged-claude-tests
     permissions:
       contents: write
       issues: write
       pull-requests: write
       id-token: write
-    uses: diranged/claude-code-agentic-workflows/.github/workflows/shared-claude-responder.yml@integ-testing
-    with:
-      runner: diranged-claude-tests
-      allowed_bots: 'claude[bot],claude-workflows-integration-test[bot]'
-      allowed_tools: 'Bash(*),Read,Glob,Grep,Edit,Write,WebFetch,WebSearch'
-    secrets:
-      claude_code_oauth_token: ${{ secrets.CLAUDE_OAUTH_TOKEN }}
+    steps:
+      - uses: diranged/claude-code-agentic-workflows/claude-respond@integ-testing
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_OAUTH_TOKEN }}
+          allowed_bots: 'claude[bot],claude-workflows-integration-test[bot]'
+          allowed_tools: 'Bash(*),Read,Glob,Grep,Edit,Write,WebFetch,WebSearch'
