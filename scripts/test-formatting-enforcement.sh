@@ -4,9 +4,6 @@ source "$(dirname "$0")/lib.sh"
 
 echo "=== Test: Formatting Enforcement ==="
 
-# Track seen run IDs
-SEEN_RUNS=""
-
 # 1. Create test issue that requires writing TypeScript code
 ISSUE=$(create_test_issue \
   "Formatting Enforcement Test" \
@@ -20,77 +17,58 @@ gh issue edit "$ISSUE" \
   --repo "$GITHUB_REPOSITORY" \
   --add-label "claude:design" --add-label "claude:auto_advance"
 
-# 3. Wait for design phase
+# 3. Wait for full pipeline: design → review → implement
 echo "--- Phase 1: Design ---"
-RUN_ID=$(wait_for_triggered_run "claude-engineers.yml" 120)
-SEEN_RUNS="$RUN_ID"
-echo "Design run: $RUN_ID"
-wait_for_completion "$RUN_ID" 1200
+wait_for_label "$ISSUE" "claude:review" 600
+echo "Design phase completed"
 
-# 4. Wait for review phase
 echo "--- Phase 2: Review ---"
-sleep 30
-RUN_ID=$(wait_for_new_run "claude-engineers.yml" "$SEEN_RUNS" 300)
-SEEN_RUNS="$SEEN_RUNS,$RUN_ID"
-echo "Review run: $RUN_ID"
-wait_for_completion "$RUN_ID" 1200
+wait_for_label "$ISSUE" "claude:implement" 1200
+echo "Review phase completed"
 
-# 5. Wait for implement phase
+# 4. Wait for PR
 echo "--- Phase 3: Implement ---"
+PR=$(wait_for_linked_pr "$ISSUE" 600)
+echo "PR #$PR created"
+
+# 5. Wait for CI to run on the PR
+echo "Waiting for CI on PR #$PR..."
 sleep 30
-RUN_ID=$(wait_for_new_run "claude-engineers.yml" "$SEEN_RUNS" 300)
-SEEN_RUNS="$SEEN_RUNS,$RUN_ID"
-echo "Implement run: $RUN_ID"
-wait_for_completion "$RUN_ID" 1200
 
-# 6. Verify PR was created
-echo "Checking for PR linked to issue #$ISSUE..."
-PR=$(gh pr list \
-  --repo "$GITHUB_REPOSITORY" \
-  --json number,body \
-  --jq ".[] | select(.body | contains(\"#$ISSUE\")) | .number" | head -1)
-
-if [ -z "$PR" ]; then
-  print_result "FAIL" "No PR created linking to issue #$ISSUE"
-  exit 1
-fi
-echo "PR #$PR created successfully"
-
-# 7. Wait for CI to run on the PR
-echo "Waiting for CI to run on PR #$PR..."
-sleep 30
-CI_RUN=$(gh run list \
-  --repo "$GITHUB_REPOSITORY" \
-  --workflow "ci.yml" \
-  --limit 5 \
-  --json databaseId,headBranch,status \
-  --jq "[.[] | select(.status != \"completed\")] | .[0].databaseId // empty" 2>/dev/null || true)
-
-if [ -z "$CI_RUN" ]; then
-  # CI might have already completed, check the latest
+# Find CI run for this PR's branch
+PR_BRANCH=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json headRefName --jq '.headRefName')
+CI_RUN=""
+ELAPSED=0
+while [ "$ELAPSED" -lt 120 ]; do
   CI_RUN=$(gh run list \
     --repo "$GITHUB_REPOSITORY" \
     --workflow "ci.yml" \
+    --branch "$PR_BRANCH" \
     --limit 1 \
     --json databaseId \
-    --jq '.[0].databaseId' 2>/dev/null || true)
+    --jq '.[0].databaseId // empty' 2>/dev/null || true)
+  if [ -n "$CI_RUN" ]; then
+    break
+  fi
+  sleep 10
+  ELAPSED=$((ELAPSED + 10))
+done
+
+if [ -z "$CI_RUN" ]; then
+  echo "Warning: Could not find CI run for PR #$PR (branch: $PR_BRANCH)"
+  print_result "WARN" "PR created but could not verify CI formatting check"
+  exit 0
 fi
 
-if [ -n "$CI_RUN" ]; then
-  echo "CI run: $CI_RUN"
-  # Wait for CI completion
-  gh run watch "$CI_RUN" --repo "$GITHUB_REPOSITORY" --interval 10 2>/dev/null || true
+echo "CI run: $CI_RUN"
+gh run watch "$CI_RUN" --repo "$GITHUB_REPOSITORY" --interval 10 2>/dev/null || true
 
-  CI_CONCLUSION=$(gh run view "$CI_RUN" --repo "$GITHUB_REPOSITORY" --json conclusion --jq '.conclusion')
-  echo "CI conclusion: $CI_CONCLUSION"
+CI_CONCLUSION=$(gh run view "$CI_RUN" --repo "$GITHUB_REPOSITORY" --json conclusion --jq '.conclusion')
+echo "CI conclusion: $CI_CONCLUSION"
 
-  if [ "$CI_CONCLUSION" = "success" ]; then
-    print_result "PASS" "Formatting enforcement working — PR #$PR passes CI formatting check"
-  else
-    print_result "FAIL" "PR #$PR failed CI (conclusion: $CI_CONCLUSION) — agent may not have run prettier"
-    exit 1
-  fi
+if [ "$CI_CONCLUSION" = "success" ]; then
+  print_result "PASS" "Formatting enforcement working — PR #$PR passes CI formatting check"
 else
-  echo "Warning: Could not find CI run for PR #$PR"
-  print_result "WARN" "PR created but could not verify CI formatting check"
+  print_result "FAIL" "PR #$PR failed CI (conclusion: $CI_CONCLUSION) — agent may not have run prettier"
+  exit 1
 fi
