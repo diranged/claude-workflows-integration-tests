@@ -36,3 +36,4 @@ jobs:
           max_implementations: '0'
           timeout_minutes: '30'
           force_rotation: ${{ inputs.force_rotation && 'true' || 'false' }}
+          allowed_bots: 'claude[bot],claude-workflows-integration-test[bot]'
